@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Billetera Fintech | Portal Clientes</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .hidden { display: none !important; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4);
+    }
+    .login-box { width: 100%; max-width: 400px; }
+    .dashboard { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .saldo-card {
+      background: linear-gradient(135deg, #059669, #0f766e);
+      border-radius: 16px; padding: 28px; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    h1, h2, h3, p { margin: 0; }
+    .title-accent { color: var(--accent); font-size: 1.5rem; font-weight: 700; }
+    .subtitle { color: var(--muted); font-size: 0.875rem; margin-top: 4px; }
+    .form-group { margin-top: 16px; }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 10px 14px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 0.95rem;
+    }
+    input:focus { outline: none; border-color: var(--accent); }
+    button {
+      width: 100%; margin-top: 18px; padding: 11px; border: none; border-radius: 8px;
+      background: var(--accent); color: #022c22; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+    }
+    button:hover { background: var(--accent-hover); }
+    .btn-logout {
+      width: auto; margin: 0; padding: 8px 16px; background: #334155; color: var(--text); font-weight: 500;
+    }
+    .btn-logout:hover { background: var(--danger); }
+    .saldo-monto { font-size: 2.4rem; font-weight: 800; margin-top: 6px; }
+    .cuenta-num { font-family: monospace; font-size: 1.2rem; font-weight: 700; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 0.9rem; }
+    th { text-align: left; color: var(--muted); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    td { padding: 12px 0; border-bottom: 1px solid rgba(51,65,85,0.5); }
+    .text-right { text-align: right; }
+    .negativo { color: #f87171; font-weight: 700; }
+    .positivo { color: #34d399; font-weight: 700; }
+    .msg { margin-top: 12px; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA 1: LOGIN -->
+  <div id="vista-login" class="card login-box">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <h1 class="title-accent">Billetera Fintech</h1>
+      <p class="subtitle">Acceso seguro mediante JWT</p>
+    </div>
+    <form id="form-login">
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" id="login-user" required placeholder="Ej: cliente1" />
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="login-pass" required placeholder="••••••••" />
+      </div>
+      <p id="login-error" class="msg negativo hidden"></p>
+      <button type="submit">Iniciar Sesión</button>
+    </form>
+  </div>
+
+  <!-- PANTALLA 2: DASHBOARD BILLETERA -->
+  <div id="vista-dashboard" class="dashboard hidden">
+    <div class="card topbar">
+      <div>
+        <span style="font-size: 0.75rem; color: var(--accent); font-weight: 700; text-transform: uppercase;">Sesión Activa</span>
+        <h2 id="dash-usuario" style="font-size: 1.2rem; margin-top: 2px;">Cargando...</h2>
+      </div>
+      <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+
+    <div class="grid-2">
+      <div class="saldo-card">
+        <div>
+          <p style="font-size: 0.875rem; opacity: 0.9;">Cuenta Corriente Digital</p>
+          <p id="dash-numero-cuenta" class="cuenta-num">---</p>
+        </div>
+        <div style="margin-top: 32px;">
+          <p style="font-size: 0.75rem; text-transform: uppercase; opacity: 0.85;">Saldo Disponible</p>
+          <p id="dash-saldo" class="saldo-monto">$0</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="title-accent" style="font-size: 1.15rem;">Transferir Dinero</h3>
+        <form id="form-transferir">
+          <div class="form-group">
+            <label>N° Cuenta Destino</label>
+            <input type="text" id="trans-destino" required placeholder="Ej: 10002" />
+          </div>
+          <div class="form-group">
+            <label>Monto (CLP)</label>
+            <input type="number" id="trans-monto" required min="1" step="1" placeholder="Ej: 25000" />
+          </div>
+          <div class="form-group">
+            <label>Descripción (Opcional)</label>
+            <input type="text" id="trans-desc" placeholder="Ej: Pago almuerzo" />
+          </div>
+          <p id="trans-msg" class="msg hidden"></p>
+          <button type="submit">Enviar Transferencia</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 1.15rem;">Últimos Movimientos</h3>
+        <a href="#" onclick="cargarDatos(); return false;" style="color: var(--accent); font-size: 0.85rem;">Actualizar</a>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Descripción</th>
+            <th class="text-right">Monto</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-movimientos"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://192.168.1.100:8001/api";
+    let miNumeroCuenta = "";
+    const formatoCLP = new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP"
+    });
+
+    document.getElementById("form-login").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const username = document.getElementById("login-user").value.trim();
+      const password = document.getElementById("login-pass").value;
+      const errorBox = document.getElementById("login-error");
+      errorBox.classList.add("hidden");
+
+      try {
+        const res = await fetch(API_URL + "/token/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: username, password: password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errorBox.textContent = data.detail || "Usuario o clave incorrectos.";
+          errorBox.classList.remove("hidden");
+          return;
+        }
+        sessionStorage.setItem("access_token", data.access);
+        mostrarDashboard();
+      } catch (err) {
+        errorBox.textContent = "Error de red con 192.168.1.100:8001.";
+        errorBox.classList.remove("hidden");
+      }
+    });
+
+    async function cargarDatos() {
+      const token = sessionStorage.getItem("access_token");
+      if (!token) return cerrarSesion();
+      const headers = { "Authorization": "Bearer " + token };
+
+      const resCuenta = await fetch(API_URL + "/mi-cuenta/", { headers: headers });
+      if (resCuenta.status === 401) return cerrarSesion();
+      const cuenta = await resCuenta.json();
+
+      miNumeroCuenta = cuenta.numero_cuenta;
+      document.getElementById("dash-usuario").textContent = cuenta.usuario;
+      document.getElementById("dash-numero-cuenta").textContent = "N° " + cuenta.numero_cuenta;
+      document.getElementById("dash-saldo").textContent = formatoCLP.format(cuenta.saldo);
+
+      const resMovs = await fetch(API_URL + "/movimientos/", { headers: headers });
+      const movimientos = await resMovs.json();
+      const tbody = document.getElementById("tabla-movimientos");
+      tbody.innerHTML = "";
+
+      movimientos.forEach(function(m) {
+        const esEnvio = m.cuenta_origen === miNumeroCuenta;
+        const clase = esEnvio ? "negativo" : "positivo";
+        const signo = esEnvio ? "-" : "+";
+        const fecha = new Date(m.fecha).toLocaleString("es-CL");
+        tbody.innerHTML += "<tr>" +
+          "<td style='color: var(--muted);'>" + fecha + "</td>" +
+          "<td style='font-family: monospace;'>" + (m.cuenta_origen || "Depósito") + "</td>" +
+          "<td style='font-family: monospace;'>" + m.cuenta_destino + "</td>" +
+          "<td>" + (m.descripcion || "-") + "</td>" +
+          "<td class='text-right " + clase + "'>" + signo + formatoCLP.format(m.monto) + "</td>" +
+        "</tr>";
+      });
+    }
+
+    document.getElementById("form-transferir").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const token = sessionStorage.getItem("access_token");
+      const msgBox = document.getElementById("trans-msg");
+      msgBox.classList.add("hidden");
+
+      const payload = {
+        cuenta_destino: document.getElementById("trans-destino").value.trim(),
+        monto: document.getElementById("trans-monto").value,
+        descripcion: document.getElementById("trans-desc").value.trim()
+      };
+
+      const res = await fetch(API_URL + "/transferir/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      msgBox.classList.remove("hidden", "negativo", "positivo");
+      if (!res.ok) {
+        msgBox.textContent = data.error || "Error al procesar la transferencia.";
+        msgBox.classList.add("negativo");
+      } else {
+        msgBox.textContent = "¡Transferencia enviada con éxito!";
+        msgBox.classList.add("positivo");
+        document.getElementById("form-transferir").reset();
+        cargarDatos();
+      }
+    });
+
+    function mostrarDashboard() {
+      document.getElementById("vista-login").classList.add("hidden");
+      document.getElementById("vista-dashboard").classList.remove("hidden");
+      cargarDatos();
+    }
+
+    function cerrarSesion() {
+      sessionStorage.removeItem("access_token");
+      document.getElementById("vista-dashboard").classList.add("hidden");
+      document.getElementById("vista-login").classList.remove("hidden");
+    }
+
+    if (sessionStorage.getItem("access_token")) mostrarDashboard();
+  </script>
+</body>
+</html>
